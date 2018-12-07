@@ -1,0 +1,88 @@
+* {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 100%; }
+
+.clear:after {
+  content: '';
+  display: table;
+  clear: both; }
+
+/* General */
+html {
+  height: 100%; }
+
+body {
+  height: 100%;
+  font: 14px/1.5 Arial, serif;
+  color: #888; }
+
+.greeting {
+  position: absolute;
+  margin-top: -5px;
+  width: 500px;
+  height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #4C8CB5;
+  background: #FFF;
+  animation-name: hide;
+  animation-delay: 1s;
+  animation-duration: 4s;
+  animation-fill-mode: forwards;
+}
+
+/* Layout */
+.page-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%; 
+}
+
+svg {
+  border: 1px solid #86b872;
+}
+line:hover {
+  cursor: pointer;
+}
+
+.rect {
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  background: green;
+}
+
+.btn {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #F00;
+  border-radius: 50%;
+  background: #FFF;
+  line-height: 10px;
+  color: #F00;
+  font-size: 1.3em;
+  cursor: pointer;
+}
+.btn::selection {
+  background: transparent;
+}
+
+@keyframes hide {
+  from {
+    opacity: 1;
+     visibility: visible;
+  }
+  to {
+    opacity: 0;
+     visibility: hidden;
+  }
+}
