@@ -27,8 +27,8 @@ Vue.component('canvas-area', {
 	methods: {
 		createRect (event) {
 			let rect = {
-				x: event.x - event.originalTarget.getBoundingClientRect().x,
-				y: event.y - event.originalTarget.getBoundingClientRect().y,
+				x: event.x - this.$refs.canvas.getBoundingClientRect().x,
+				y: event.y - this.$refs.canvas.getBoundingClientRect().y,
 				color: '#'+Math.round(0xffffff * Math.random()).toString(16).padStart(6, '0'),
 				stroke: ''
 			};
