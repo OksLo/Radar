@@ -22,7 +22,7 @@ body {
 
 .greeting {
   position: absolute;
-  margin-top: -5px;
+  margin-top: -25px;
   width: 500px;
   height: 500px;
   display: flex;
@@ -31,22 +31,30 @@ body {
   border: 1px solid #4C8CB5;
   background: #FFF;
   animation-name: hide;
-  animation-delay: 1s;
-  animation-duration: 4s;
+  animation-delay: 2s;
+  animation-duration: 1s;
   animation-fill-mode: forwards;
+}
+
+.workspace-wrap {
+  animation-name: show;
+  animation-delay: 2.5s;
+  animation-duration: 1s;
+  animation-fill-mode: backwards;
 }
 
 /* Layout */
 .page-wrap {
   position: relative;
+  padding: 10px;
+  min-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%; 
 }
 
 svg {
+  margin-bottom: 20px;
   border: 1px solid #86b872;
 }
 line:hover {
@@ -61,7 +69,12 @@ line:hover {
 }
 
 .btn {
+  cursor: pointer;
+}
+.btn-group {
   position: absolute;
+}
+.btn-group .btn {
   width: 18px;
   height: 18px;
   border: 1px solid #F00;
@@ -70,19 +83,47 @@ line:hover {
   line-height: 10px;
   color: #F00;
   font-size: 1.3em;
-  cursor: pointer;
 }
 .btn::selection {
   background: transparent;
+}
+.btn-clear {
+  padding: 2px 5px;
+  border: 1px solid #999;
+  color: #656565;
+}
+.btn-clear:hover {
+  border: 1px solid #555;
+  color: #555;
+}
+
+.block-info {
+  position: fixed;
+  right: 5px;
+  bottom: 5px;
+  font-size: .9em;
+}
+.block-info ul {
+  margin-bottom: 10px;
+  list-style: none;
 }
 
 @keyframes hide {
   from {
     opacity: 1;
-     visibility: visible;
+    visibility: visible;
   }
   to {
     opacity: 0;
-     visibility: hidden;
+    visibility: hidden;
+  }
+}
+
+@keyframes show {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

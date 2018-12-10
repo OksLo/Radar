@@ -1,37 +1,79 @@
 Vue.component('canvas-area', {
 	template: `
-		<div>
+		<div class="workspace-wrap">
 			<svg version="1.1" width="500" height="500" viewBox="0 0 500 500" fill="none" stroke="#ccc" stroke-linecap="round"
 			 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="area"
 			 @dblclick.self="createRect"
-			 ref="canvas">
-				<rect v-for="(rect, index) in rects" :x="rect.x" :y="rect.y" :width="20" :height="10" :fill="rect.color" :stroke="rect.stroke" @mousedown="mouseDownRect(rect, $event)" @click="pickRect(rect, $event)" @dblclick="deleteRect(index)"/>
-				<line v-for="(line, index) in lines" :x1="line.from.x + 20" :y1="line.from.y + 10" :x2="line.to.x" :y2="line.to.y" :stroke="line.stroke" stroke-width="1" @click="pickLine(line, index, $event)" @mouseover=""/>
+			 ref="workspace">
+				<rect v-for="(rect, index) in rects" :x="rect.x" :y="rect.y" :width="20" :height="10" :fill="rect.color" :stroke="rect.stroke" @mousedown="mouseDownRect(rect, $event)" @click="pickRect(rect, $event)" @dblclick="deleteRect(index)" @dragstart.prevent/>
+				<line v-for="(line, index) in lines" :x1="line.from.x + 20" :y1="line.from.y + 10" :x2="line.to.x" :y2="line.to.y" :stroke="line.stroke" stroke-width="1" @click="pickLine(line, index, $event)"/>
 			</svg>
-			<button class="btn btn-delete" v-show="selectedLine !== null" @click="deleteLine" ref="btnDelete">&#128936;</button>
-			<button class="btn btn-cancel" v-show="selectedLine !== null" @click="cancelDeleteLine" ref="btnCancel">&#8260;</button>
+			<div class="btn-group" v-show="selectedLine !== null" :style="{ top: btns.y + 'px', left: btns.x + 'px' }">
+				<button class="btn btn-delete" @click="deleteLine" v-html="settings.btn.deleteBtnText"></button>
+				<button class="btn btn-cancel" @click="cancelDeleteLine" v-html="settings.btn.cancelBtnText"></button>
+			</div>
+			<div class="block-info">
+				<ul>
+					<li>Всего прямоугольников - {{rects.length}}</li>
+					<li>Всего связей - {{lines.length}}</li>
+				</ul>
+				<button class="btn btn-clear" @click="clearData" v-html="settings.btn.clearBtnText"></button>
+			</div>
 		</div>
 	`,
 	data () {
 		return {
+			settings: {
+				line: {
+					colorDefault: '#999',
+					colorActive: '#F00'
+				},
+				rect: {
+					borderColorActive: '#F00'
+				},
+				btn: {
+					deleteBtnText: '&#10005;',
+					cancelBtnText: '&#8260;',
+					clearBtnText: 'Очистить поле'
+				}
+			},
 			pair: {from: null, to: null},
 			selectedLine: null,
 			dragged: null,
-			rects : [],
-			lines: []
+			rects : localStorage.getItem('rectSet') ? JSON.parse(localStorage.getItem('rectSet')) : [],
+			lines: [],
+			btns: {
+				x: 0,
+				y: 0
+			},
+			workspace: {
+				x: 0,
+				y: 0
+			}
 		}
 	},
-	created () {
-		document.body.addEventListener('mouseup', this.mouseUpRect);
+	mounted () {
+		this.getWorkspaceCoords();
+		window.addEventListener('resize', this.getWorkspaceCoords);
+		document.body.addEventListener('mouseup', this.mouseUpRect, true);
+		window.addEventListener('beforeunload', this.saveData);
+
+		if (localStorage.getItem('lineSet')) {		
+			this.lines = JSON.parse(localStorage.getItem('lineSet'));
+			this.lines.forEach((line) => {
+				line.from = this.rects.find((rect) => {return rect.x === line.from.x});
+				line.to = this.rects.find((rect) => {return rect.x === line.to.x});
+			});
+		};
 	},
 	methods: {
 		createRect (event) {
 			let rect = {
-				x: event.x - this.$refs.canvas.getBoundingClientRect().x,
-				y: event.y - this.$refs.canvas.getBoundingClientRect().y,
-				color: '#'+Math.round(0xffffff * Math.random()).toString(16).padStart(6, '0'),
-				stroke: ''
+				x: event.x - this.workspace.x,
+				y: event.y - this.workspace.y,
+				color: '#'+Math.round(0xffffff * Math.random()).toString(16).padStart(6, '0')
 			};
+			rect.stroke = rect.color;
 			this.rects.push(rect);
 		},
 		deleteRect (itemIndex) {
@@ -44,7 +86,7 @@ Vue.component('canvas-area', {
 				let line = {
 					from: this.pair.from,
 					to: this.pair.to,
-					stroke: '#555'
+					stroke: this.settings.line.colorDefault
 				};
 				this.lines.push(line);
 			}
@@ -54,41 +96,59 @@ Vue.component('canvas-area', {
 			this.selectedLine = null;
 		},
 		cancelDeleteLine () {
-			this.lines[this.selectedLine].stroke = '#555';
+			this.lines[this.selectedLine].stroke = this.settings.line.colorDefault;
 			this.selectedLine = null;
 		},
 		pickRect (pickedRect, event) {
+			console.log('pickRect e: ', event);
 			if (this.pair.from === null) {
-				pickedRect.stroke = 'red';
+				pickedRect.stroke = this.settings.rect.borderColorActive;
 				this.pair.from = pickedRect;
 			} else if (pickedRect === this.pair.from) {
-				pickedRect.stroke = '';
+				pickedRect.stroke = pickedRect.color;
 				this.pair.from = null;
 			} else {
 				this.pair.to = pickedRect;
-				this.pair.from.stroke = '';
+				this.pair.from.stroke = this.pair.from.color;
 				this.createLine();
 				this.pair.from = this.pair.to = null;
 			}
 		},
 		pickLine(pickedLine, lineIndex, e) {
 			this.selectedLine = lineIndex;
-			pickedLine.stroke = '#F00';
-			this.$refs.btnDelete.style.top = this.$refs.btnCancel.style.top = e.y - 20 + 'px';
-			this.$refs.btnDelete.style.left = e.x + 'px';
-			this.$refs.btnCancel.style.left = e.x + 22 + 'px';
+			pickedLine.stroke = this.settings.line.colorActive;
+			this.btns.x = e.x;
+			this.btns.y = e.y - 20;
 		},
 		mouseDownRect (draggedRect, e) {
 			this.dragged = draggedRect;
-			this.$refs.canvas.addEventListener('mousemove', this.mouseMoveRect);
+			this.$refs.workspace.addEventListener('mousemove', this.mouseMoveRect);
 		},
 		mouseUpRect (e) {
 			this.dragged = null;
-			this.$refs.canvas.removeEventListener('mousemove', this.mouseMoveRect);
+			this.$refs.workspace.removeEventListener('mousemove', this.mouseMoveRect);
 		},
 		mouseMoveRect (e) {
-			this.dragged.x = e.x - this.$refs.canvas.getBoundingClientRect().x;
-			this.dragged.y = e.y - this.$refs.canvas.getBoundingClientRect().y;
+			this.dragged.x = e.x - this.workspace.x;
+			this.dragged.y = e.y - this.workspace.y;
+		},
+		getWorkspaceCoords () {
+			this.workspace.x = this.$refs.workspace.getBoundingClientRect().left;
+			this.workspace.y = this.$refs.workspace.getBoundingClientRect().top;
+		},
+		saveData(e) {
+			e.preventDefault();
+			e.returnValue = '';
+			if (this.selectedLine) this.lines[this.selectedLine].stroke = this.settings.line.colorDefault;
+			if (this.pair.from)  this.pair.from.stroke = this.pair.from.color;
+			localStorage.setItem('rectSet', JSON.stringify(this.rects));
+			localStorage.setItem('lineSet', JSON.stringify(this.lines));
+		},
+		clearData () {
+			this.rects = [];
+			this.lines = [];
+			this.pair.from = this.pair.to = this.selectedLine = null;
+			localStorage.clear();
 		}
 	}
 })
